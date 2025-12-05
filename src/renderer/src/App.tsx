@@ -1,100 +1,125 @@
+/**
+ * Main App - Premium dashboard layout with HugeIcons
+ */
 import { useState } from 'react'
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { Sidebar } from './components/Sidebar'
+import { Dashboard } from './pages/Dashboard'
+import { VideoEditor } from './pages/VideoEditor'
+import { useProjectStore } from './stores/ProjectStore'
+import type { Project } from './types'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Configuration01Icon, InformationCircleIcon } from '@hugeicons/core-free-icons'
+
+type View = 'dashboard' | 'editor' | 'settings'
 
 function App(): React.JSX.Element {
-  const [updateStatus, setUpdateStatus] = useState<string>('')
-  const [isChecking, setIsChecking] = useState<boolean>(false)
+  const [currentView, setCurrentView] = useState<View>('dashboard')
+  const { setCurrentProject } = useProjectStore()
 
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-
-  const checkForUpdates = async (): Promise<void> => {
-    setIsChecking(true)
-    setUpdateStatus('Checking for updates...')
-
-    try {
-      const result = await window.api.checkForUpdates()
-      setUpdateStatus('Update check completed. Check console for details.')
-      console.log('Update check result:', result)
-    } catch (error) {
-      setUpdateStatus(`Error checking for updates: ${error}`)
-      console.error('Update check error:', error)
-    } finally {
-      setIsChecking(false)
-    }
+  const handleOpenProject = (project: Project) => {
+    setCurrentProject(project)
+    setCurrentView('editor')
   }
 
-  const downloadUpdate = async (): Promise<void> => {
-    setUpdateStatus('Downloading update...')
-
-    try {
-      const result = await window.api.downloadUpdate()
-      setUpdateStatus('Update download completed. Check console for details.')
-      console.log('Download result:', result)
-    } catch (error) {
-      setUpdateStatus(`Error downloading update: ${error}`)
-      console.error('Download error:', error)
-    }
-  }
-
-  const quitAndInstall = async (): Promise<void> => {
-    setUpdateStatus('Installing update...')
-
-    try {
-      await window.api.quitAndInstall()
-    } catch (error) {
-      setUpdateStatus(`Error installing update: ${error}`)
-      console.error('Install error:', error)
-    }
+  const handleNavigate = (view: View) => {
+    setCurrentView(view)
   }
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Version 1.0.1</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
+    <div className="flex h-full w-full overflow-hidden">
+      <Sidebar currentView={currentView} onNavigate={handleNavigate} />
 
-      {/* Auto-update controls */}
-      <div className="update-section">
-        <h3>Auto-Update Controls</h3>
-        <div className="update-actions">
-          <button onClick={checkForUpdates} disabled={isChecking} className="update-button">
-            {isChecking ? 'Checking...' : 'Check for Updates'}
-          </button>
-          <button onClick={downloadUpdate} className="update-button">
-            Download Update
-          </button>
-          <button onClick={quitAndInstall} className="update-button">
-            Install & Restart
-          </button>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {currentView === 'dashboard' && <Dashboard onOpenProject={handleOpenProject} />}
+        {currentView === 'editor' && <VideoEditor />}
+        {currentView === 'settings' && <SettingsPage />}
+      </main>
+    </div>
+  )
+}
+
+function SettingsPage() {
+  return (
+    <div className="flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-b from-slate-50/50 to-white/50">
+      {/* Header */}
+      <header className="shrink-0 px-6 lg:px-8 py-6 border-b border-slate-100 bg-white/60 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+          <p className="text-slate-500 mt-1">Configure your AutoVid preferences</p>
         </div>
-        {updateStatus && (
-          <div className="update-status">
-            <p>{updateStatus}</p>
+      </header>
+
+      <div className="flex-1 overflow-auto px-6 lg:px-8 py-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* API Configuration */}
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                <HugeiconsIcon icon={Configuration01Icon} className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">API Configuration</h2>
+                <p className="text-sm text-slate-500">Manage your API connections</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-slate-900">Google Gemini</p>
+                  <p className="text-xs text-slate-500">Script generation</p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                  Connected
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-slate-900">Cloudflare AI</p>
+                  <p className="text-xs text-slate-500">Image generation</p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                  Connected
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-slate-900">TTSFM</p>
+                  <p className="text-xs text-slate-500">Text-to-speech</p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                  Connected
+                </span>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
+          {/* About */}
+          <div className="card p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+                <HugeiconsIcon icon={InformationCircleIcon} className="w-5 h-5 text-slate-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">About AutoVid</h2>
+                <p className="text-sm text-slate-500">Version information</p>
+              </div>
+            </div>
+
+            <div className="text-slate-600 space-y-2">
+              <p><span className="font-semibold">Version:</span> 1.0.1</p>
+              <p><span className="font-semibold">Platform:</span> Electron + React</p>
+              <p className="text-sm text-slate-500 mt-4">
+                AutoVid is an AI-powered video creation platform that generates long-form videos from a single topic.
+                It uses Gemini for scripts, Cloudflare AI for images, TTSFM for voiceover, and FFmpeg for video composition.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
-      <Versions></Versions>
-    </>
+    </div>
   )
 }
 
